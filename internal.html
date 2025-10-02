@@ -4,12 +4,14 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>DPR — Internal Assessment (Gold / Art / EIS)</title>
+<meta name="color-scheme" content="light only" />
 <style>
   body{margin:0;padding:20px;min-height:100vh;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial,sans-serif;
        background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);}
-  .container{max-width:900px;margin:0 auto;background:#fff;border-radius:20px;box-shadow:0 20px 40px rgba(0,0,0,.12);overflow:hidden}
+  .container{max-width:1100px;margin:0 auto;background:#fff;border-radius:20px;box-shadow:0 20px 40px rgba(0,0,0,.12);overflow:hidden}
   .header{background:#2c3e50;color:#fff;padding:28px}
-  .header h1{margin:0;font-weight:300}
+  .header h1{margin:0 0 6px;font-weight:300;font-size:2rem}
+  .header p{margin:0;opacity:.9}
   .form-container{padding:26px}
   .question-group{margin-bottom:20px;padding:18px;background:#f8f9fa;border-radius:14px;border-left:5px solid #667eea}
   .pill-group{display:flex;flex-wrap:wrap;gap:10px}
@@ -19,6 +21,9 @@
   .check-card{display:flex;align-items:center;gap:10px;padding:12px;background:#fff;border:2px solid #ddd;border-radius:12px;cursor:pointer}
   .check-card:hover{border-color:#667eea;background:#f0f2ff}
   .submit-btn{width:100%;padding:16px;background:#667eea;color:#fff;border:none;border-radius:12px;font-weight:700;cursor:pointer}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .btn{padding:10px 14px;border:2px solid #ddd;background:#fff;border-radius:12px;cursor:pointer;font-weight:700}
+  .btn.secondary{background:#f7f7ff}
   .result{display:none;padding:24px;background:#f8f9fa;border-radius:16px;margin-top:18px}
   .result.show{display:block}
   .investment-card{background:#fff;padding:16px;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.08);margin-bottom:10px}
@@ -26,19 +31,28 @@
 </head>
 <body>
   <div class="container">
-    <div class="header"><h1>De Pointe Research</h1><p>Internal Assessment — Gold / Art / EIS only</p></div>
+    <div class="header">
+      <h1>De Pointe Research</h1>
+      <p>Internal Assessment — recommends only Gold, Art or EIS</p>
+    </div>
     <div class="form-container">
       <form id="investmentForm">
         
+        <!-- Budget -->
+        <section class="question-group">
+          <h3>Indicative Budget</h3>
+          <input id="budget" name="budget" type="number" placeholder="e.g. 25000" />
+        </section>
+
         <!-- Focus Areas -->
         <section class="question-group">
-          <h3>Focus Areas (select all that apply)</h3>
-          <label class="check-card"><input type="checkbox" name="focus" value="gold" /> Gold</label>
-          <label class="check-card"><input type="checkbox" name="focus" value="art" /> Art</label>
-          <label class="check-card"><input type="checkbox" name="focus" value="eis" /> EIS</label>
-          <label class="check-card"><input type="checkbox" name="focus" value="stocks" /> Stocks</label>
-          <label class="check-card"><input type="checkbox" name="focus" value="bonds" /> Bonds</label>
-          <label class="check-card"><input type="checkbox" name="focus" value="property" /> Property</label>
+          <h3>Focus Areas (context only, recs limited to Gold / Art / EIS)</h3>
+          <label class="check-card"><input type="checkbox" name="focus" value="gold"/> Gold</label>
+          <label class="check-card"><input type="checkbox" name="focus" value="art"/> Art</label>
+          <label class="check-card"><input type="checkbox" name="focus" value="eis"/> EIS</label>
+          <label class="check-card"><input type="checkbox" name="focus" value="stocks"/> Stocks</label>
+          <label class="check-card"><input type="checkbox" name="focus" value="bonds"/> Bonds</label>
+          <label class="check-card"><input type="checkbox" name="focus" value="property"/> Property</label>
         </section>
 
         <!-- Risk -->
@@ -64,9 +78,9 @@
         <!-- Goals -->
         <section class="question-group">
           <h3>Goals</h3>
-          <label class="check-card"><input type="checkbox" name="goals" value="preserve" /> Preserve Capital</label>
-          <label class="check-card"><input type="checkbox" name="goals" value="growth" /> Growth</label>
-          <label class="check-card"><input type="checkbox" name="goals" value="income" /> Income</label>
+          <label class="check-card"><input type="checkbox" name="goals" value="preserve"/> Preserve Capital</label>
+          <label class="check-card"><input type="checkbox" name="goals" value="growth"/> Growth</label>
+          <label class="check-card"><input type="checkbox" name="goals" value="income"/> Income</label>
         </section>
 
         <!-- Experience -->
@@ -80,9 +94,11 @@
         </section>
 
         <button type="submit" class="submit-btn">Get Recommendation</button>
+        <div class="toolbar">
+          <button type="button" id="downloadPDF" class="btn">Download PDF Report</button>
+        </div>
       </form>
 
-      <!-- Results -->
       <div id="result" class="result">
         <h3>Recommendations</h3>
         <div id="cards"></div>
@@ -90,58 +106,69 @@
     </div>
   </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
+ integrity="sha512-YcsIPvn+6g1xtEex2vY2bQ4H/4S7A6Q0WbRjeF3qfB9q6Kx1+M2mPzTq7cJ8rZUiTTW2u3lW9gYk9vC8C+1P0A=="
+ crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
-const cardsEl = document.getElementById('cards');
-const resultEl = document.getElementById('result');
 const form = document.getElementById('investmentForm');
+const resultEl = document.getElementById('result');
+const cardsEl = document.getElementById('cards');
 
-form.addEventListener('submit', function(e){
+form.addEventListener('submit', e=>{
   e.preventDefault();
-  const fd = new FormData(form);
-  const risk = fd.get('risk');
-  const timeline = fd.get('timeline');
-  const experience = fd.get('experience');
-  const focus = fd.getAll('focus');
-  const goals = fd.getAll('goals');
+  const fd=new FormData(form);
+  const risk=fd.get('risk'),timeline=fd.get('timeline'),exp=fd.get('experience');
+  const goals=fd.getAll('goals'),focus=fd.getAll('focus');
+  const budget=Number(fd.get('budget')||0);
 
-  let scores = {gold:0,art:0,eis:0};
+  let score={gold:0,art:0,eis:0};
 
-  // --- Risk
-  if(risk==='low'){scores.gold+=3;scores.art+=1;}
-  if(risk==='medium'){scores.gold+=2;scores.art+=2;scores.eis+=2;}
-  if(risk==='high'){scores.art+=3;scores.eis+=3;scores.gold+=1;}
+  // risk
+  if(risk==='low'){score.gold+=3;score.art+=1;}
+  if(risk==='medium'){score.gold+=2;score.art+=2;score.eis+=2;}
+  if(risk==='high'){score.art+=3;score.eis+=3;score.gold+=1;}
 
-  // --- Timeline
-  if(timeline==='short'){scores.gold+=2;}
-  if(timeline==='mid'){scores.gold+=2;scores.art+=2;scores.eis+=1;}
-  if(timeline==='long'){scores.art+=3;scores.eis+=3;scores.gold+=1;}
+  // timeline
+  if(timeline==='short'){score.gold+=2;}
+  if(timeline==='mid'){score.gold+=2;score.art+=2;score.eis+=1;}
+  if(timeline==='long'){score.art+=3;score.eis+=3;score.gold+=1;}
 
-  // --- Experience
-  if(experience==='new'){scores.gold+=2;}
-  if(experience==='intermediate'){scores.art+=1;scores.eis+=1;}
-  if(experience==='advanced'){scores.eis+=2;scores.art+=1;}
+  // experience
+  if(exp==='new'){score.gold+=2;}
+  if(exp==='intermediate'){score.art+=1;score.eis+=1;}
+  if(exp==='advanced'){score.eis+=2;score.art+=1;}
 
-  // --- Goals
-  if(goals.includes('preserve')){scores.gold+=2;}
-  if(goals.includes('growth')){scores.art+=2;scores.eis+=2;}
-  if(goals.includes('income')){scores.gold+=1;}
+  // goals
+  if(goals.includes('preserve')) score.gold+=2;
+  if(goals.includes('growth')){score.art+=2;score.eis+=2;}
+  if(goals.includes('income')) score.gold+=1;
 
-  // --- Focus boost
-  if(focus.includes('gold')) scores.gold+=2;
-  if(focus.includes('art')) scores.art+=2;
-  if(focus.includes('eis')) scores.eis+=2;
+  // focus
+  if(focus.includes('gold')) score.gold+=2;
+  if(focus.includes('art')) score.art+=2;
+  if(focus.includes('eis')) score.eis+=2;
 
-  // Pick best
-  const max = Math.max(scores.gold,scores.art,scores.eis);
-  const picks = Object.entries(scores).filter(([k,v])=>v===max);
+  // budget
+  if(budget>100000){score.art+=1;score.eis+=1;}
 
-  cardsEl.innerHTML = picks.map(([asset,score])=>{
-    const desc = {gold:"🥇 Gold — stability, hedge, liquidity.",
-                  art:"🎨 Art — growth, diversification, long-term appreciation.",
-                  eis:"🚀 EIS — tax advantages, higher risk/reward."}[asset];
-    return `<div class="investment-card"><strong>${desc}</strong><br/>Score: ${score}</div>`;
+  const max=Math.max(...Object.values(score));
+  const picks=Object.entries(score).filter(([k,v])=>v===max);
+
+  cardsEl.innerHTML=picks.map(([asset,pts])=>{
+    const desc={gold:"🥇 Gold — stability, hedge, liquidity.",
+                art:"🎨 Art — growth, diversification, long-term.",
+                eis:"🚀 EIS — tax advantages, higher risk/reward."}[asset];
+    return `<div class="investment-card"><strong>${desc}</strong><br/>Score: ${pts}</div>`;
   }).join('');
   resultEl.classList.add('show');
+});
+
+// PDF button
+document.getElementById('downloadPDF').addEventListener('click', ()=>{
+  const element=document.getElementById('result');
+  if(typeof html2pdf!=='undefined'){
+    html2pdf().from(element).set({filename:'DPR-Client-Report.pdf'}).save();
+  }else{window.print();}
 });
 </script>
 </body>
